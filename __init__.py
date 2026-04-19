@@ -21,7 +21,6 @@ from .keymaps import register_keymaps, unregister_keymaps
 
 
 def on_load() -> None:
-    lf.props.register(FPWalkSettings)
     lf.ui.register_panel(FPNavPanel)
 
     for op in (
@@ -49,6 +48,5 @@ def on_unload() -> None:
     ):
         lf.operators.unregister(op)
 
-    lf.props.unregister(FPWalkSettings)
     lf.ui.unregister_panel(FPNavPanel)
     lf.log.info("fp_navigation: unloaded")
