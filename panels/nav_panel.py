@@ -41,8 +41,7 @@ class FPWalkSettings(PropertyGroup):
 class FPNavPanel(lf.ui.Panel):
     id    = "fp_navigation.panel"
     label = "FP Walk"
-    space = lf.ui.PanelSpace.SIDEBAR
-    category = "Navigation"
+    space = lf.ui.PanelSpace.MAIN_PANEL_TAB
     order = 10
 
     def draw(self, ui) -> None:
