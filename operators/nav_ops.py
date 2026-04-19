@@ -1,11 +1,23 @@
 """
-Navigation operators for fp_navigation.
+Walk-mode navigation operators for fp_navigation.
 
-Each operator reads the current viewport camera pose, applies a
-delta (rotation or translation), and writes the result back.
+Walk mode behaviour
+-------------------
+- Eye height is locked to STATE.eye_height (world Y).  Moving forward/back
+  slides the camera horizontally — Y is never changed by movement.
+- ← / →  yaw  around world Y (turn head left/right).
+- ↑ / ↓  translate along the horizontal projection of the view direction
+          (stride across the floor, ignoring current pitch).
+- Q / E  pitch the camera up / down around its local X axis (tilt head).
+          Pitch is clamped to ±STATE.pitch_limit_deg so you cannot flip.
 
-Camera pose is a 4x4 column-major float32 transform matrix
-(OpenGL convention: -Z forward, Y up).
+Camera pose convention (LichtFeld Studio)
+------------------------------------------
+Flat list of 16 floats, column-major 4×4, OpenGL convention:
+  col 0  = right  vector  [0,1,2]
+  col 1  = up     vector  [4,5,6]
+  col 2  = -fwd   vector  [8,9,10]   (camera looks down -Z)
+  col 3  = pos    [12,13,14], w=1
 """
 
 from __future__ import annotations
@@ -13,180 +25,232 @@ import math
 import lichtfeld as lf
 from lfs_plugins.types import Operator
 
+
 # ---------------------------------------------------------------------------
-# Shared plugin state (survives hot-reload within a session)
+# Shared plugin state
 # ---------------------------------------------------------------------------
 
 class _State:
-    """Mutable plugin-global state shared across all operators."""
-    yaw_step: float = 5.0      # degrees per key press
-    move_step: float = 0.25    # world units per key press
-    home_pose: list | None = None  # saved 4x4 flat list, or None
+    yaw_step: float        = 5.0    # degrees per key press (turn)
+    pitch_step: float      = 3.0    # degrees per key press (tilt)
+    move_step: float       = 0.25   # world units per key press
+    eye_height: float      = 1.65   # world Y of the camera (metres)
+    pitch_limit_deg: float = 80.0   # max absolute pitch angle
+    home_pose: list | None = None
 
 
 STATE = _State()
 
 
 # ---------------------------------------------------------------------------
-# Helpers
+# Camera helper
 # ---------------------------------------------------------------------------
 
-def _get_viewport_camera() -> "lf.ViewportCamera | None":
-    """Return the active viewport camera, or None."""
+def _get_cam():
     try:
         return lf.viewport.get_camera()
     except AttributeError:
-        # Fallback path for older API surfaces
         try:
             return lf.get_viewport_camera()
         except AttributeError:
             return None
 
 
-def _make_rotation_y(angle_rad: float) -> list[float]:
-    """4x4 column-major rotation matrix around world Y axis."""
-    c = math.cos(angle_rad)
-    s = math.sin(angle_rad)
-    return [
-        c,  0.0,  s, 0.0,
-        0.0, 1.0, 0.0, 0.0,
-       -s,  0.0,  c, 0.0,
-        0.0, 0.0, 0.0, 1.0,
-    ]
+# ---------------------------------------------------------------------------
+# Math helpers  (column-major: pose[col*4 + row])
+# ---------------------------------------------------------------------------
 
-
-def _mat4_mul(a: list[float], b: list[float]) -> list[float]:
-    """Multiply two 4x4 column-major matrices."""
+def _mat4_mul(a: list, b: list) -> list:
     out = [0.0] * 16
-    for row in range(4):
-        for col in range(4):
+    for r in range(4):
+        for c in range(4):
             v = 0.0
             for k in range(4):
-                v += a[row + k * 4] * b[k + col * 4]
-            out[row + col * 4] = v
+                v += a[r + k * 4] * b[k + c * 4]
+            out[r + c * 4] = v
     return out
 
 
-def _apply_yaw(cam, angle_deg: float) -> set:
-    """Rotate the camera around world Y, keeping its position."""
-    pose = list(cam.get_pose())           # flat 16 floats, col-major
-    angle_rad = math.radians(angle_deg)
+def _rot_world_y(angle_rad: float) -> list:
+    """Rotation matrix around world Y (yaw)."""
+    c, s = math.cos(angle_rad), math.sin(angle_rad)
+    return [
+         c,  0.0,  s,  0.0,
+        0.0,  1.0,  0.0, 0.0,
+        -s,  0.0,  c,  0.0,
+        0.0,  0.0,  0.0, 1.0,
+    ]
 
-    # Extract translation from current pose (column 3)
-    tx, ty, tz = pose[12], pose[13], pose[14]
 
-    # Build rotation about world Y at origin, then restore position
-    rot = _make_rotation_y(angle_rad)
-    new_pose = _mat4_mul(rot, pose)
-    new_pose[12], new_pose[13], new_pose[14] = tx, ty, tz  # keep position
+def _rot_local_x(pose: list, angle_rad: float) -> list:
+    """Post-multiply a local-X rotation (pitch in camera space)."""
+    c, s = math.cos(angle_rad), math.sin(angle_rad)
+    rx = [
+        1.0,  0.0,  0.0, 0.0,
+        0.0,    c,    s, 0.0,
+        0.0,   -s,    c, 0.0,
+        0.0,  0.0,  0.0, 1.0,
+    ]
+    return _mat4_mul(pose, rx)
 
+
+def _current_pitch_rad(pose: list) -> float:
+    """Current pitch: asin of the forward vector's Y component."""
+    fwd_y = -pose[9]                          # forward = -col2; fwd_y = -pose[9]
+    return math.asin(max(-1.0, min(1.0, fwd_y)))
+
+
+# ---------------------------------------------------------------------------
+# Walk-mode core operations
+# ---------------------------------------------------------------------------
+
+def _walk_yaw(cam, angle_deg: float) -> set:
+    pose = list(cam.get_pose())
+    tx, tz = pose[12], pose[14]
+    new_pose = _mat4_mul(_rot_world_y(math.radians(angle_deg)), pose)
+    new_pose[12] = tx
+    new_pose[13] = STATE.eye_height
+    new_pose[14] = tz
     cam.set_pose(new_pose)
     return {"FINISHED"}
 
 
-def _apply_translate(cam, delta_local_z: float) -> set:
-    """Move the camera along its local -Z (forward) axis."""
+def _walk_stride(cam, delta: float) -> set:
+    """Horizontal stride — projects forward vector onto XZ, ignores pitch."""
     pose = list(cam.get_pose())
-
-    # Local forward = -Z column of the rotation part (col 2, negated)
-    fx = -pose[8]
-    fy = -pose[9]
-    fz = -pose[10]
-
-    # Normalise (should already be unit length, but be safe)
-    length = math.sqrt(fx*fx + fy*fy + fz*fz)
-    if length > 1e-6:
-        fx /= length
-        fy /= length
-        fz /= length
-
-    pose[12] += fx * delta_local_z
-    pose[13] += fy * delta_local_z
-    pose[14] += fz * delta_local_z
-
+    fx, fz = -pose[8], -pose[10]
+    length = math.sqrt(fx * fx + fz * fz)
+    if length < 1e-6:
+        return {"CANCELLED"}
+    fx /= length
+    fz /= length
+    pose[12] += fx * delta
+    pose[13]  = STATE.eye_height
+    pose[14] += fz * delta
     cam.set_pose(pose)
     return {"FINISHED"}
 
 
+def _walk_pitch(cam, angle_deg: float) -> set:
+    """Tilt head up/down — clamped local-X rotation."""
+    pose = list(cam.get_pose())
+    angle_rad = math.radians(angle_deg)
+    current = _current_pitch_rad(pose)
+    limit   = math.radians(STATE.pitch_limit_deg)
+    new_p   = current + angle_rad
+    if new_p > limit:
+        angle_rad = limit - current
+    elif new_p < -limit:
+        angle_rad = -limit - current
+    if abs(angle_rad) < 1e-6:
+        return {"FINISHED"}
+    new_pose = _rot_local_x(pose, angle_rad)
+    new_pose[12] = pose[12]
+    new_pose[13] = STATE.eye_height
+    new_pose[14] = pose[14]
+    cam.set_pose(new_pose)
+    return {"FINISHED"}
+
+
+def apply_eye_height(cam) -> None:
+    pose = list(cam.get_pose())
+    pose[13] = STATE.eye_height
+    cam.set_pose(pose)
+
+
 # ---------------------------------------------------------------------------
-# Operator definitions
+# Operators
 # ---------------------------------------------------------------------------
 
 class FPNavYawLeft(Operator):
     id = "fp_navigation.yaw_left"
-    label = "FP Nav: Rotate Left"
-    description = "Rotate viewport camera left (← key)"
-
+    label = "FP Walk: Turn Left"
+    description = "Turn left (← key)"
     @classmethod
-    def poll(cls, context) -> bool:
-        return _get_viewport_camera() is not None
-
-    def execute(self, context) -> set:
-        cam = _get_viewport_camera()
-        if cam is None:
-            return {"CANCELLED"}
-        return _apply_yaw(cam, -STATE.yaw_step)
+    def poll(cls, ctx): return _get_cam() is not None
+    def execute(self, ctx):
+        cam = _get_cam()
+        return {"CANCELLED"} if cam is None else _walk_yaw(cam, -STATE.yaw_step)
 
 
 class FPNavYawRight(Operator):
     id = "fp_navigation.yaw_right"
-    label = "FP Nav: Rotate Right"
-    description = "Rotate viewport camera right (→ key)"
-
+    label = "FP Walk: Turn Right"
+    description = "Turn right (→ key)"
     @classmethod
-    def poll(cls, context) -> bool:
-        return _get_viewport_camera() is not None
-
-    def execute(self, context) -> set:
-        cam = _get_viewport_camera()
-        if cam is None:
-            return {"CANCELLED"}
-        return _apply_yaw(cam, STATE.yaw_step)
+    def poll(cls, ctx): return _get_cam() is not None
+    def execute(self, ctx):
+        cam = _get_cam()
+        return {"CANCELLED"} if cam is None else _walk_yaw(cam, STATE.yaw_step)
 
 
 class FPNavMoveForward(Operator):
     id = "fp_navigation.move_forward"
-    label = "FP Nav: Move Forward"
-    description = "Move viewport camera forward (↑ key)"
-
+    label = "FP Walk: Move Forward"
+    description = "Stride forward on the ground plane (↑ key)"
     @classmethod
-    def poll(cls, context) -> bool:
-        return _get_viewport_camera() is not None
-
-    def execute(self, context) -> set:
-        cam = _get_viewport_camera()
-        if cam is None:
-            return {"CANCELLED"}
-        return _apply_translate(cam, STATE.move_step)
+    def poll(cls, ctx): return _get_cam() is not None
+    def execute(self, ctx):
+        cam = _get_cam()
+        return {"CANCELLED"} if cam is None else _walk_stride(cam, STATE.move_step)
 
 
 class FPNavMoveBackward(Operator):
     id = "fp_navigation.move_backward"
-    label = "FP Nav: Move Backward"
-    description = "Move viewport camera backward (↓ key)"
-
+    label = "FP Walk: Move Backward"
+    description = "Stride backward on the ground plane (↓ key)"
     @classmethod
-    def poll(cls, context) -> bool:
-        return _get_viewport_camera() is not None
+    def poll(cls, ctx): return _get_cam() is not None
+    def execute(self, ctx):
+        cam = _get_cam()
+        return {"CANCELLED"} if cam is None else _walk_stride(cam, -STATE.move_step)
 
-    def execute(self, context) -> set:
-        cam = _get_viewport_camera()
+
+class FPNavPitchUp(Operator):
+    id = "fp_navigation.pitch_up"
+    label = "FP Walk: Look Up"
+    description = "Tilt head upward (Q key)"
+    @classmethod
+    def poll(cls, ctx): return _get_cam() is not None
+    def execute(self, ctx):
+        cam = _get_cam()
+        return {"CANCELLED"} if cam is None else _walk_pitch(cam, STATE.pitch_step)
+
+
+class FPNavPitchDown(Operator):
+    id = "fp_navigation.pitch_down"
+    label = "FP Walk: Look Down"
+    description = "Tilt head downward (E key)"
+    @classmethod
+    def poll(cls, ctx): return _get_cam() is not None
+    def execute(self, ctx):
+        cam = _get_cam()
+        return {"CANCELLED"} if cam is None else _walk_pitch(cam, -STATE.pitch_step)
+
+
+class FPNavApplyHeight(Operator):
+    id = "fp_navigation.apply_height"
+    label = "FP Walk: Snap to Eye Height"
+    description = "Move camera Y to the configured eye height immediately"
+    @classmethod
+    def poll(cls, ctx): return _get_cam() is not None
+    def execute(self, ctx):
+        cam = _get_cam()
         if cam is None:
             return {"CANCELLED"}
-        return _apply_translate(cam, -STATE.move_step)
+        apply_eye_height(cam)
+        lf.log.info(f"fp_navigation: eye height set to {STATE.eye_height:.3f}")
+        return {"FINISHED"}
 
 
 class FPNavSetHome(Operator):
     id = "fp_navigation.set_home"
-    label = "FP Nav: Set Home"
-    description = "Save current camera position as the home (reset) position"
-
+    label = "FP Walk: Set Home"
+    description = "Bookmark current camera pose"
     @classmethod
-    def poll(cls, context) -> bool:
-        return _get_viewport_camera() is not None
-
-    def execute(self, context) -> set:
-        cam = _get_viewport_camera()
+    def poll(cls, ctx): return _get_cam() is not None
+    def execute(self, ctx):
+        cam = _get_cam()
         if cam is None:
             return {"CANCELLED"}
         STATE.home_pose = list(cam.get_pose())
@@ -196,16 +260,13 @@ class FPNavSetHome(Operator):
 
 class FPNavResetHome(Operator):
     id = "fp_navigation.reset_home"
-    label = "FP Nav: Reset to Home"
-    description = "Return viewport camera to the saved home position"
-
+    label = "FP Walk: Reset to Home"
+    description = "Return camera to saved home position"
     @classmethod
-    def poll(cls, context) -> bool:
-        return _get_viewport_camera() is not None and STATE.home_pose is not None
-
-    def execute(self, context) -> set:
-        cam = _get_viewport_camera()
+    def poll(cls, ctx): return _get_cam() is not None and STATE.home_pose is not None
+    def execute(self, ctx):
+        cam = _get_cam()
         if cam is None or STATE.home_pose is None:
             return {"CANCELLED"}
-        cam.set_pose(STATE.home_pose)
+        cam.set_pose(list(STATE.home_pose))
         return {"FINISHED"}

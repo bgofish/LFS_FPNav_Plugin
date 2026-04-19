@@ -1,55 +1,54 @@
 """
-fp_navigation — First-person ← / → arrow-key navigation plugin for LichtFeld Studio.
+fp_navigation — First-person walk mode plugin for LichtFeld Studio.
 
-Adds a side-panel (FP Nav) with:
-  ←   Rotate camera left  (yaw)
-  →   Rotate camera right (yaw)
-  ↑   Move forward along view axis
-  ↓   Move backward along view axis
-  R   Reset to home position
-
-Speed and step-size are configurable from the panel.
-All operators are also accessible via Edit → Operator Search.
+Key bindings (active when viewport has focus)
+  ←  /  →    Turn left / right (yaw)
+  ↑  /  ↓    Stride forward / backward (horizontal, height-locked)
+  Q           Tilt head up (pitch)
+  E           Tilt head down (pitch)
 """
 
 import lichtfeld as lf
-from .panels.nav_panel import FPNavPanel
+from .panels.nav_panel import FPNavPanel, FPWalkSettings
 from .operators.nav_ops import (
-    FPNavYawLeft,
-    FPNavYawRight,
-    FPNavMoveForward,
-    FPNavMoveBackward,
-    FPNavResetHome,
-    FPNavSetHome,
+    FPNavYawLeft, FPNavYawRight,
+    FPNavMoveForward, FPNavMoveBackward,
+    FPNavPitchUp, FPNavPitchDown,
+    FPNavApplyHeight,
+    FPNavSetHome, FPNavResetHome,
 )
 from .keymaps import register_keymaps, unregister_keymaps
 
 
 def on_load() -> None:
-    """Called by LichtFeld Studio when the plugin is loaded."""
+    lf.props.register(FPWalkSettings)
     lf.ui.register_panel(FPNavPanel)
 
-    lf.operators.register(FPNavYawLeft)
-    lf.operators.register(FPNavYawRight)
-    lf.operators.register(FPNavMoveForward)
-    lf.operators.register(FPNavMoveBackward)
-    lf.operators.register(FPNavResetHome)
-    lf.operators.register(FPNavSetHome)
+    for op in (
+        FPNavYawLeft, FPNavYawRight,
+        FPNavMoveForward, FPNavMoveBackward,
+        FPNavPitchUp, FPNavPitchDown,
+        FPNavApplyHeight,
+        FPNavSetHome, FPNavResetHome,
+    ):
+        lf.operators.register(op)
 
     register_keymaps()
-    lf.log.info("fp_navigation: loaded — ← → ↑ ↓ arrow keys active")
+    lf.log.info("fp_navigation: walk mode loaded — ← → ↑ ↓ Q E")
 
 
 def on_unload() -> None:
-    """Called by LichtFeld Studio when the plugin is unloaded."""
     unregister_keymaps()
 
-    lf.operators.unregister(FPNavSetHome)
-    lf.operators.unregister(FPNavResetHome)
-    lf.operators.unregister(FPNavMoveBackward)
-    lf.operators.unregister(FPNavMoveForward)
-    lf.operators.unregister(FPNavYawRight)
-    lf.operators.unregister(FPNavYawLeft)
+    for op in (
+        FPNavResetHome, FPNavSetHome,
+        FPNavApplyHeight,
+        FPNavPitchDown, FPNavPitchUp,
+        FPNavMoveBackward, FPNavMoveForward,
+        FPNavYawRight, FPNavYawLeft,
+    ):
+        lf.operators.unregister(op)
 
+    lf.props.unregister(FPWalkSettings)
     lf.ui.unregister_panel(FPNavPanel)
     lf.log.info("fp_navigation: unloaded")
