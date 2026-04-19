@@ -1,15 +1,9 @@
 """
 fp_navigation — fly mode + ground lock for LichtFeld Studio.
-
-Key bindings (viewport focus required)
-  ←  /  →    Turn left / right
-  ↑  /  ↓    Stride forward / backward (floor-clamped)
-  Q           Tilt head up
-  E           Tilt head down
 """
 
 import lichtfeld as lf
-from .panels.nav_panel import FPNavPanel
+from .panels.nav_panel import FPNavPanel, register_loc
 from .operators.nav_ops import (
     FPNavYawLeft, FPNavYawRight,
     FPNavMoveForward, FPNavMoveBackward,
@@ -19,34 +13,56 @@ from .operators.nav_ops import (
 )
 from .keymaps import register_keymaps, unregister_keymaps
 
+_OPERATORS = (
+    FPNavYawLeft, FPNavYawRight,
+    FPNavMoveForward, FPNavMoveBackward,
+    FPNavPitchUp, FPNavPitchDown,
+    FPNavSetFloor,
+    FPNavSetHome, FPNavResetHome,
+)
 
-def on_load() -> None:
-    lf.ui.register_panel(FPNavPanel)
+def on_load():
+    register_loc()
 
-    for op in (
-        FPNavYawLeft, FPNavYawRight,
-        FPNavMoveForward, FPNavMoveBackward,
-        FPNavPitchUp, FPNavPitchDown,
-        FPNavSetFloor,
-        FPNavSetHome, FPNavResetHome,
-    ):
-        lf.operators.register(op)
+    # Try all known registration patterns
+    for op in _OPERATORS:
+        for method in ("register_operator", "register_class"):
+            fn = getattr(lf, method, None) or getattr(lf.ui, method, None)
+            if fn:
+                try:
+                    fn(op)
+                    break
+                except Exception:
+                    pass
+
+    try:
+        lf.register_class(FPNavPanel)
+    except Exception:
+        pass
 
     register_keymaps()
     lf.log.info("fp_navigation: loaded — ← → ↑ ↓ Q E + floor lock")
 
+    # Return operator classes — some plugin managers auto-register return value
+    return list(_OPERATORS) + [FPNavPanel]
 
-def on_unload() -> None:
+
+def on_unload():
     unregister_keymaps()
 
-    for op in (
-        FPNavResetHome, FPNavSetHome,
-        FPNavSetFloor,
-        FPNavPitchDown, FPNavPitchUp,
-        FPNavMoveBackward, FPNavMoveForward,
-        FPNavYawRight, FPNavYawLeft,
-    ):
-        lf.operators.unregister(op)
+    for op in reversed(_OPERATORS):
+        for method in ("unregister_operator", "unregister_class"):
+            fn = getattr(lf, method, None) or getattr(lf.ui, method, None)
+            if fn:
+                try:
+                    fn(op)
+                    break
+                except Exception:
+                    pass
 
-    lf.ui.unregister_panel(FPNavPanel)
+    try:
+        lf.unregister_class(FPNavPanel)
+    except Exception:
+        pass
+
     lf.log.info("fp_navigation: unloaded")

@@ -1,41 +1,30 @@
-"""
-FP Walk Navigation panel — sidebar category "Navigation", label "FP Walk".
-"""
+"""FP Navigation panel."""
 
 import lichtfeld as lf
-from lfs_plugins.props import PropertyGroup, FloatProperty
 from ..operators.nav_ops import STATE
+from ..keymaps import BINDINGS, OP_KEY_LABEL, KEY_NAMES, _handle_event, _rebuild_op_key_label
+from .. import settings as _cfg
+
+_BASE = "lfs_plugins.fp_navigation.operators.nav_ops."
+
+_LOC = {
+    "fp_nav.set_floor":     "Set Floor to Eye Y",
+    "fp_nav.move_forward":  "Forward",
+    "fp_nav.move_backward": "Backward",
+    "fp_nav.yaw_left":      "Turn Left",
+    "fp_nav.yaw_right":     "Turn Right",
+    "fp_nav.pitch_up":      "Look Up",
+    "fp_nav.pitch_down":    "Look Down",
+    "fp_nav.set_home":      "Set Home",
+    "fp_nav.reset_home":    "Reset Home",
+}
+
+def register_loc():
+    for key, val in _LOC.items():
+        lf.ui.loc_set(key, val)
 
 
-class FPWalkSettings(PropertyGroup):
-    eye_height: FloatProperty(
-        name="Eye height",
-        description="Camera Y position locked during walk (world units)",
-        default=1.65,
-        min=0.0,
-        max=50.0,
-    )
-    yaw_step: FloatProperty(
-        name="Turn step (°)",
-        description="Degrees per ← / → key press",
-        default=5.0,
-        min=0.1,
-        max=45.0,
-    )
-    pitch_step: FloatProperty(
-        name="Tilt step (°)",
-        description="Degrees per Q / E key press",
-        default=3.0,
-        min=0.1,
-        max=30.0,
-    )
-    move_step: FloatProperty(
-        name="Stride step",
-        description="World units per ↑ / ↓ key press",
-        default=0.25,
-        min=0.001,
-        max=10.0,
-    )
+_capturing: str | None = None
 
 
 class FPNavPanel(lf.ui.Panel):
@@ -45,54 +34,103 @@ class FPNavPanel(lf.ui.Panel):
     order = 10
 
     def draw(self, ui) -> None:
-        s = FPWalkSettings.get_instance()
+        global _capturing
 
-        # Sync settings → STATE every redraw
-        STATE.eye_height  = s.eye_height
-        STATE.yaw_step    = s.yaw_step
-        STATE.pitch_step  = s.pitch_step
-        STATE.move_step   = s.move_step
-
-        # ── Eye height ─────────────────────────────────────────────────────
-        ui.label("Eye height")
-        ui.prop(s, "eye_height")
-        ui.operator("fp_navigation.apply_height", label="Snap Camera to Height")
-
-        ui.separator()
+        if _capturing:
+            ui.label(f"Rebinding: {_op_short(_capturing)}")
+            ui.label("Press any key  |  Esc = cancel")
+            if ui.button("Cancel"):
+                _capturing = None
+                lf.ui.set_modal_event_callback(_handle_event)
+            return
 
         # ── Movement ───────────────────────────────────────────────────────
-        ui.label("Move  (↑ ↓)")
-        ui.prop(s, "move_step")
-        row = ui.row()
-        row.operator("fp_navigation.move_forward",  label="↑ Forward")
-        row.operator("fp_navigation.move_backward", label="↓ Backward")
+        changed, new_val = ui.drag_float("Stride (m)##stride", STATE.move_step, 0.01, 0.01, 10.0)
+        if changed:
+            STATE.move_step = new_val
+            _cfg.save(BINDINGS, STATE)
+        _op_row(ui, _BASE + "FPNavMoveForward",  "fp_nav.move_forward")
+        ui.same_line()
+        _op_row(ui, _BASE + "FPNavMoveBackward", "fp_nav.move_backward")
 
         ui.separator()
 
         # ── Turn ───────────────────────────────────────────────────────────
-        ui.label("Turn  (← →)")
-        ui.prop(s, "yaw_step")
-        row2 = ui.row()
-        row2.operator("fp_navigation.yaw_left",  label="← Left")
-        row2.operator("fp_navigation.yaw_right", label="→ Right")
+        changed, new_val = ui.drag_float("Turn (°)##turn", STATE.yaw_step, 0.1, 0.1, 45.0)
+        if changed:
+            STATE.yaw_step = new_val
+            _cfg.save(BINDINGS, STATE)
+        _op_row(ui, _BASE + "FPNavYawLeft",  "fp_nav.yaw_left")
+        ui.same_line()
+        _op_row(ui, _BASE + "FPNavYawRight", "fp_nav.yaw_right")
 
         ui.separator()
 
         # ── Tilt ───────────────────────────────────────────────────────────
-        ui.label("Tilt head  (Q / E)")
-        ui.prop(s, "pitch_step")
-        row3 = ui.row()
-        row3.operator("fp_navigation.pitch_up",   label="Q  Look Up")
-        row3.operator("fp_navigation.pitch_down", label="E  Look Down")
+        changed, new_val = ui.drag_float("Tilt (°)##tilt", STATE.pitch_step, 0.1, 0.1, 45.0)
+        if changed:
+            STATE.pitch_step = new_val
+            _cfg.save(BINDINGS, STATE)
+        _op_row(ui, _BASE + "FPNavPitchUp",   "fp_nav.pitch_up")
+        ui.same_line()
+        _op_row(ui, _BASE + "FPNavPitchDown", "fp_nav.pitch_down")
+
+        ui.separator()
+
+        # ── Floor lock ─────────────────────────────────────────────────────
+        ui.label(f"Floor Y: {STATE.floor_y:.3f}")
+        ui.operator_(_BASE + "FPNavSetFloor", "fp_nav.set_floor")
 
         ui.separator()
 
         # ── Home ───────────────────────────────────────────────────────────
-        ui.label("Home position")
-        row4 = ui.row()
-        row4.operator("fp_navigation.set_home",  label="Set Home")
-        row4.operator(
-            "fp_navigation.reset_home",
-            label="Reset",
-            enabled=STATE.home_pose is not None,
-        )
+        ui.operator_(_BASE + "FPNavSetHome",   "fp_nav.set_home")
+        ui.same_line()
+        ui.operator_(_BASE + "FPNavResetHome", "fp_nav.reset_home")
+
+
+def _op_short(op_id: str) -> str:
+    return op_id.split(".")[-1].replace("FPNav", "")
+
+
+def _op_row(ui, op_id: str, loc_key: str) -> None:
+    global _capturing
+    key_label = OP_KEY_LABEL.get(op_id, "?")
+    ui.operator_(op_id, loc_key)
+    ui.same_line()
+    if ui.small_button(f"[{key_label}]##{op_id}"):
+        _capturing = op_id
+        _install_capture(op_id)
+
+
+def _install_capture(op_id: str) -> None:
+    global _capturing
+
+    def _capture(event):
+        global _capturing
+        if event.type != lf.ui.ModalEventType.Key or event.action != 1:
+            return False
+        if event.over_gui:
+            return False
+
+        if event.key == 256:  # Esc — cancel
+            _capturing = None
+        else:
+            # Remove any existing binding for this op
+            for k in [k for k, v in BINDINGS.items() if v == op_id]:
+                del BINDINGS[k]
+                KEY_NAMES.pop(k, None)
+            # Remove any existing binding for this key
+            BINDINGS.pop(event.key, None)
+            # Set new binding
+            BINDINGS[event.key] = op_id
+            label = chr(event.key) if 32 <= event.key < 127 else str(event.key)
+            KEY_NAMES[event.key] = label
+            _rebuild_op_key_label()
+            _cfg.save(BINDINGS, STATE)
+            _capturing = None
+
+        lf.ui.set_modal_event_callback(_handle_event)
+        return True
+
+    lf.ui.set_modal_event_callback(_capture)
