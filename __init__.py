@@ -1,20 +1,20 @@
 """
-fp_navigation — First-person walk mode plugin for LichtFeld Studio.
+fp_navigation — fly mode + ground lock for LichtFeld Studio.
 
-Key bindings (active when viewport has focus)
-  ←  /  →    Turn left / right (yaw)
-  ↑  /  ↓    Stride forward / backward (horizontal, height-locked)
-  Q           Tilt head up (pitch)
-  E           Tilt head down (pitch)
+Key bindings (viewport focus required)
+  ←  /  →    Turn left / right
+  ↑  /  ↓    Stride forward / backward (floor-clamped)
+  Q           Tilt head up
+  E           Tilt head down
 """
 
 import lichtfeld as lf
-from .panels.nav_panel import FPNavPanel, FPWalkSettings
+from .panels.nav_panel import FPNavPanel
 from .operators.nav_ops import (
     FPNavYawLeft, FPNavYawRight,
     FPNavMoveForward, FPNavMoveBackward,
     FPNavPitchUp, FPNavPitchDown,
-    FPNavApplyHeight,
+    FPNavSetFloor,
     FPNavSetHome, FPNavResetHome,
 )
 from .keymaps import register_keymaps, unregister_keymaps
@@ -27,13 +27,13 @@ def on_load() -> None:
         FPNavYawLeft, FPNavYawRight,
         FPNavMoveForward, FPNavMoveBackward,
         FPNavPitchUp, FPNavPitchDown,
-        FPNavApplyHeight,
+        FPNavSetFloor,
         FPNavSetHome, FPNavResetHome,
     ):
         lf.operators.register(op)
 
     register_keymaps()
-    lf.log.info("fp_navigation: walk mode loaded — ← → ↑ ↓ Q E")
+    lf.log.info("fp_navigation: loaded — ← → ↑ ↓ Q E + floor lock")
 
 
 def on_unload() -> None:
@@ -41,7 +41,7 @@ def on_unload() -> None:
 
     for op in (
         FPNavResetHome, FPNavSetHome,
-        FPNavApplyHeight,
+        FPNavSetFloor,
         FPNavPitchDown, FPNavPitchUp,
         FPNavMoveBackward, FPNavMoveForward,
         FPNavYawRight, FPNavYawLeft,
