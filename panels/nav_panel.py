@@ -2,10 +2,10 @@
 
 import lichtfeld as lf
 from ..operators.nav_ops import STATE
-from ..keymaps import BINDINGS, OP_KEY_LABEL, KEY_NAMES, _handle_event, _rebuild_op_key_label
+from ..keymaps import BINDINGS, OP_KEY_LABEL, KEY_NAMES, _handle_event, _rebuild_op_key_label, _BASE
 from .. import settings as _cfg
 
-_BASE = "lfs_plugins.fp_navigation.operators.nav_ops."
+
 
 _LOC = {
     "fp_nav.set_floor":     "Set Floor to Eye Y",

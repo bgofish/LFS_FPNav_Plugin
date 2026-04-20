@@ -7,19 +7,16 @@ import json
 import pathlib
 import lichtfeld as lf
 
-# Settings file sits alongside the plugin folder
 _SETTINGS_PATH = pathlib.Path(__file__).parent / "settings.json"
 
-_BASE = "lfs_plugins.fp_navigation.operators.nav_ops."
-
-# Default bindings: GLFW key code -> operator id
+# Default bindings use bare class names — keymaps.py prepends the correct base
 DEFAULT_BINDINGS = {
-    265: _BASE + "FPNavMoveForward",
-    264: _BASE + "FPNavMoveBackward",
-    263: _BASE + "FPNavYawLeft",
-    262: _BASE + "FPNavYawRight",
-    81:  _BASE + "FPNavPitchUp",
-    69:  _BASE + "FPNavPitchDown",
+    265: "FPNavMoveForward",
+    264: "FPNavMoveBackward",
+    263: "FPNavYawLeft",
+    262: "FPNavYawRight",
+    81:  "FPNavPitchUp",
+    69:  "FPNavPitchDown",
 }
 
 DEFAULT_STATE = {
@@ -35,7 +32,6 @@ def load() -> dict:
     try:
         if _SETTINGS_PATH.exists():
             data = json.loads(_SETTINGS_PATH.read_text(encoding="utf-8"))
-            # JSON keys are always strings — convert binding keys back to int
             if "bindings" in data:
                 data["bindings"] = {int(k): v for k, v in data["bindings"].items()}
             lf.log.info(f"fp_navigation: settings loaded from {_SETTINGS_PATH}")
@@ -55,9 +51,7 @@ def save(bindings: dict, state) -> None:
         "floor_y":    state.floor_y,
     }
     try:
-        _SETTINGS_PATH.write_text(
-            json.dumps(data, indent=2), encoding="utf-8"
-        )
+        _SETTINGS_PATH.write_text(json.dumps(data, indent=2), encoding="utf-8")
         lf.log.info(f"fp_navigation: settings saved to {_SETTINGS_PATH}")
     except Exception as e:
         lf.log.warn(f"fp_navigation: could not save settings: {e}")
@@ -68,9 +62,7 @@ def apply(data: dict, bindings: dict, state) -> None:
     if "bindings" in data:
         bindings.clear()
         bindings.update(data["bindings"])
-    else:
-        bindings.clear()
-        bindings.update(DEFAULT_BINDINGS)
+    # Note: if no bindings in data, keymaps.py will fill in the correct defaults
 
     state.move_step  = data.get("move_step",  DEFAULT_STATE["move_step"])
     state.yaw_step   = data.get("yaw_step",   DEFAULT_STATE["yaw_step"])
