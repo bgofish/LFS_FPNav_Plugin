@@ -31,10 +31,6 @@ If you want to use it everytime: set to [Load on Startup] (Grid view required)
 
 <img width="316" height="317" alt="image" src="https://github.com/user-attachments/assets/be0b346f-14b6-4657-a9fd-78450b8bed3b" />
 
-If buttons are greyed-out then you will need to close & restart LichFeld Studio
-
-<img width="421" height="319" alt="image" src="https://github.com/user-attachments/assets/9d9ff045-b9c8-4289-a8ae-783a9ba9fb28" />
-
 ---
 
 ## Usage
