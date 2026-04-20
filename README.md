@@ -18,7 +18,7 @@ height-locked to a configurable floor level so you stay on the ground plane.
 | `E` | Tilt head up (pitch) |
 
 All bindings are active when the viewport has focus. Pitch is clamped to ±80°
-so the camera cannot flip over. Keys are fully rebindable from the panel.
+so the camera cannot flip over. Keys are fully rebindable from the panel (may not be working - but can be set in the  plugin Settings.json file manually).
 
 ---
 
