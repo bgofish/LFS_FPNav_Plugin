@@ -2,11 +2,11 @@
 
 A [LichtFeld Studio](https://lichtfeld.io) plugin for first-person walk-mode
 navigation of 3D Gaussian Splat scenes. Movement is horizontal and
-height-locked to a configurable floor level so you stay on a ground plane. This can be used in conjunction with any of the existing camera modes: Fly mode, Orbit & Free Orbit.
+height-locked to a configurable floor level so you stay on the ground plane.
 
 ---
 
-## Default Key Bindings (Fully customisable)
+## Default Key Bindings
 
 | Key | Action |
 |-----|--------|
@@ -49,8 +49,22 @@ hot-reload is enabled in the Plugin Manager.
 ---
 
 ## Panel Reference
-<img width="533" height="456" alt="image" src="https://github.com/user-attachments/assets/9b57dbf2-f850-42ea-8eb2-721d9cf1b18c" />
 
+```
+Stride (m)   [drag]
+  [Forward [↑]]  [↓]   [Turn Left [←]]  [→]
+
+Turn (°)     [drag]
+  [Turn Left [←]]  [→]
+
+Tilt (°)     [drag]
+  [Look Up [Q]]  [Look Down [E]]
+
+Floor Y: 0.000
+  [Set Floor to Eye Y]
+
+[Set Home]  [Reset Home]
+```
 
 Each button has a small **`[key]`** label next to it showing the current
 binding. Click the `[key]` label to rebind — the panel enters capture mode,
@@ -77,7 +91,24 @@ rebind a key. The file lives at:
 ```
 <plugin_folder>/fp_navigation/settings.json
 ```
-<img width="1103" height="387" alt="image" src="https://github.com/user-attachments/assets/a7de45b7-b068-4249-9715-a06c5a281ae5" />
+
+---
+
+## File Structure
+
+```
+fp_navigation/
+├── pyproject.toml          # Plugin manifest & LichtFeld compatibility
+├── __init__.py             # on_load / on_unload entry points
+├── keymaps.py              # Key bindings and modal event callback
+├── settings.py             # JSON save/load for bindings and step values
+├── operators/
+│   ├── __init__.py
+│   └── nav_ops.py          # Walk operators (yaw, stride, pitch, home, floor)
+└── panels/
+    ├── __init__.py
+    └── nav_panel.py        # FP Walk panel with sliders and rebind UI
+```
 
 ---
 
