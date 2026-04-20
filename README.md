@@ -1,4 +1,4 @@
-# fp_navigation — First-Person Walk Mode
+# FP_Navigation — First-Person Walk Mode
 
 A [LichtFeld Studio](https://lichtfeld.io) plugin for first-person walk-mode
 navigation of 3D Gaussian Splat scenes. Movement is horizontal and
