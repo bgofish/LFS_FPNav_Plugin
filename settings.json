@@ -10,5 +10,6 @@
   "move_step": 3.0,
   "yaw_step": 17.5,
   "pitch_step": 3.0,
-  "floor_y": 0.0
+  "floor_y": 0.0,
+  "load_on_startup": true
 }
