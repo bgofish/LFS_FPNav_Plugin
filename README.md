@@ -10,12 +10,12 @@ height-locked to a configurable floor level so you stay on the ground plane.
 
 | Key | Action |
 |-----|--------|
-| `←` | Turn left (yaw around world Y) |
-| `→` | Turn right (yaw around world Y) |
+| `←` | Turn right (yaw around world Y) |
+| `→` | Turn left (yaw around world Y) |
 | `↑` | Stride forward (horizontal, floor-locked) |
 | `↓` | Stride backward (horizontal, floor-locked) |
-| `Q` | Tilt head up (pitch) |
-| `E` | Tilt head down (pitch) |
+| `Q` | Tilt head down (pitch) |
+| `E` | Tilt head up (pitch) |
 
 All bindings are active when the viewport has focus. Pitch is clamped to ±80°
 so the camera cannot flip over. Keys are fully rebindable from the panel.
@@ -23,16 +23,13 @@ so the camera cannot flip over. Keys are fully rebindable from the panel.
 ---
 
 ## Installation
+Paste https://github.com/bgofish/LFS_FPNav_Plugin  into the Plugin.Installer from within LichtFeld Studio. You may need to close & resart lichFeld Studio
 
-Copy the `fp_navigation/` folder into your LichtFeld plugin directory:
+<img width="967" height="239" alt="image" src="https://github.com/user-attachments/assets/7dc65b25-7993-4028-83a9-f8f87cc9251b" />
 
-```
-C:\Users\<you>\.lichtfeld\plugins\fp_navigation\   (Windows)
-~/.lichtfeld/plugins/fp_navigation/                 (macOS / Linux)
-```
+If you want to use it everytime: set to [Load on Startup] (Grid view required)
 
-LichtFeld Studio will detect and load it on next launch, or immediately if
-hot-reload is enabled in the Plugin Manager.
+<img width="316" height="317" alt="image" src="https://github.com/user-attachments/assets/be0b346f-14b6-4657-a9fd-78450b8bed3b" />
 
 ---
 
@@ -49,22 +46,7 @@ hot-reload is enabled in the Plugin Manager.
 ---
 
 ## Panel Reference
-
-```
-Stride (m)   [drag]
-  [Forward [↑]]  [↓]   [Turn Left [←]]  [→]
-
-Turn (°)     [drag]
-  [Turn Left [←]]  [→]
-
-Tilt (°)     [drag]
-  [Look Up [Q]]  [Look Down [E]]
-
-Floor Y: 0.000
-  [Set Floor to Eye Y]
-
-[Set Home]  [Reset Home]
-```
+<img width="535" height="446" alt="image" src="https://github.com/user-attachments/assets/2812ca88-f84f-4bd4-8c05-17a23b5f05f8" />
 
 Each button has a small **`[key]`** label next to it showing the current
 binding. Click the `[key]` label to rebind — the panel enters capture mode,
@@ -91,24 +73,10 @@ rebind a key. The file lives at:
 ```
 <plugin_folder>/fp_navigation/settings.json
 ```
+<img width="1091" height="388" alt="image" src="https://github.com/user-attachments/assets/2f00aff9-10d8-4e77-9c4c-84a8f95a9c91" />
 
----
 
-## File Structure
 
-```
-fp_navigation/
-├── pyproject.toml          # Plugin manifest & LichtFeld compatibility
-├── __init__.py             # on_load / on_unload entry points
-├── keymaps.py              # Key bindings and modal event callback
-├── settings.py             # JSON save/load for bindings and step values
-├── operators/
-│   ├── __init__.py
-│   └── nav_ops.py          # Walk operators (yaw, stride, pitch, home, floor)
-└── panels/
-    ├── __init__.py
-    └── nav_panel.py        # FP Walk panel with sliders and rebind UI
-```
 
 ---
 
