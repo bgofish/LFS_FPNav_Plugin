@@ -23,7 +23,7 @@ so the camera cannot flip over. Keys are fully rebindable from the panel.
 ---
 
 ## Installation
-Paste https://github.com/bgofish/LFS_FPNav_Plugin  into the Plugin.Installer from within LichtFeld Studio. You may need to close & resart lichFeld Studio
+Paste https://github.com/bgofish/LFS_FPNav_Plugin  into the Plugin.Installer from within LichtFeld Studio. You may need to close & restart lichFeld Studio
 
 <img width="967" height="239" alt="image" src="https://github.com/user-attachments/assets/7dc65b25-7993-4028-83a9-f8f87cc9251b" />
 
