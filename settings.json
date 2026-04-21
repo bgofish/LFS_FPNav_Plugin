@@ -1,15 +1,14 @@
 {
   "bindings": {
-    "265": "lfs_plugins.fp_navigation.operators.nav_ops.FPNavMoveForward",
-    "264": "lfs_plugins.fp_navigation.operators.nav_ops.FPNavMoveBackward",
-    "263": "lfs_plugins.fp_navigation.operators.nav_ops.FPNavYawLeft",
-    "262": "lfs_plugins.fp_navigation.operators.nav_ops.FPNavYawRight",
-    "81": "lfs_plugins.fp_navigation.operators.nav_ops.FPNavPitchUp",
-    "69": "lfs_plugins.fp_navigation.operators.nav_ops.FPNavPitchDown"
+    "265": "lfs_plugins.FP_Navigation.operators.nav_ops.FPNavMoveForward",
+    "264": "lfs_plugins.FP_Navigation.operators.nav_ops.FPNavMoveBackward",
+    "262": "lfs_plugins.FP_Navigation.operators.nav_ops.FPNavYawLeft",
+    "263": "lfs_plugins.FP_Navigation.operators.nav_ops.FPNavYawRight",
+    "69": "lfs_plugins.FP_Navigation.operators.nav_ops.FPNavPitchUp",
+    "81": "lfs_plugins.FP_Navigation.operators.nav_ops.FPNavPitchDown"
   },
-  "move_step": 3.0,
-  "yaw_step": 17.5,
-  "pitch_step": 3.0,
-  "floor_y": 0.0,
-  "load_on_startup": true
+  "move_step": 10.0,
+  "yaw_step": 13.199999809265137,
+  "pitch_step": 13.000000953674316,
+  "floor_y": 6.187784194946289
 }
