@@ -10,10 +10,10 @@ height-locked to a configurable floor level so you stay on the ground plane.
 
 | Key | Action |
 |-----|--------|
-| `←` | Walk left (yaw around world Y) |
-| `→` | Walk right (yaw around world Y) |
-| `↑` | Stride forward (horizontal, floor-locked) |
-| `↓` | Stride backward (horizontal, floor-locked) |
+| `←` | Turn to left (yaw around world Y) |
+| `→` | Turn to right (yaw around world Y) |
+| `↑` | Move forward (horizontal, floor-locked) |
+| `↓` | Move backward (horizontal, floor-locked) |
 | `Q` | Tilt head down (pitch) |
 | `E` | Tilt head up (pitch) |
 
