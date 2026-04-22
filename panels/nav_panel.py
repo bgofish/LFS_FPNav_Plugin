@@ -60,9 +60,9 @@ class FPNavPanel(lf.ui.Panel):
         if changed:
             STATE.yaw_step = new_val
             _cfg.save(BINDINGS, STATE)
-        _op_row(ui, _BASE + "FPNavYawLeft",  "fp_nav.yaw_left")
+        _op_row(ui, _BASE + "FPNavYawLeft",  "fp_nav.yaw_right")
         ui.same_line()
-        _op_row(ui, _BASE + "FPNavYawRight", "fp_nav.yaw_right")
+        _op_row(ui, _BASE + "FPNavYawRight", "fp_nav.yaw_left")
 
         ui.separator()
 
