@@ -29,7 +29,7 @@ _capturing: str | None = None
 
 class FPNavPanel(lf.ui.Panel):
     id    = "fp_navigation.panel"
-    label = "FP Walk"
+    label = "FP Nav."
     space = lf.ui.PanelSpace.MAIN_PANEL_TAB
     order = 10
 
