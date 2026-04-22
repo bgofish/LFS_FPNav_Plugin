@@ -34,15 +34,6 @@ class FPNavPanel(lf.ui.Panel):
     order = 10
 
     def draw(self, ui) -> None:
-        global _capturing
-
-        if _capturing:
-            ui.label(f"Rebinding: {_op_short(_capturing)}")
-            ui.label("Press any key  |  Esc = cancel")
-            if ui.button("Cancel"):
-                _capturing = None
-                lf.ui.set_modal_event_callback(_handle_event)
-            return
 
         # ── Movement ───────────────────────────────────────────────────────
         changed, new_val = ui.drag_float("Stride (m)##stride", STATE.move_step, 0.01, 0.01, 10.0)
