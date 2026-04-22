@@ -18,7 +18,7 @@ height-locked to a configurable floor level so you stay on the ground plane.
 | `E` | Tilt head up (pitch) |
 
 All bindings are active when the viewport has focus. Pitch is clamped to ±80°
-so the camera cannot flip over. Keys are fully rebindable from the panel (may not be working - but can be set in the  plugin Settings.json file manually).
+so the camera cannot flip over. Keys can be set in the  plugin Settings.json file.
 
 ---
 
@@ -47,10 +47,6 @@ If you want to use it everytime: set to [Load on Startup] (Grid view required)
 
 ## Panel Reference
 <img width="535" height="446" alt="image" src="https://github.com/user-attachments/assets/2812ca88-f84f-4bd4-8c05-17a23b5f05f8" />
-
-Each button has a small **`[key]`** label next to it showing the current
-binding. Click the `[key]` label to rebind — the panel enters capture mode,
-press any key to assign it, or `Esc` to cancel.
 
 ---
 
