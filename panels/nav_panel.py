@@ -4,7 +4,7 @@ from pathlib import Path
 import subprocess
 
 import lichtfeld as lf
-from ..operators.nav_ops import STATE, _do_stride, _do_yaw, _do_pitch
+from ..operators.nav_ops import STATE, _do_stride, _do_yaw, _do_pitch, NUMPAD_SLOTS, NUMPAD_LABELS
 from ..keymaps import BINDINGS, OP_KEY_LABEL, _rebuild_op_key_label, _BASE
 from .. import settings as _cfg
 
@@ -127,6 +127,30 @@ class FPNavPanel(lf.ui.Panel):
             model.bind_func(f"v{idx+1}_label",
                 lambda i=idx: f"V{i+1} ✓" if STATE.views and STATE.views[i] else f"V{i+1}")
 
+        # ── Numpad preset views ───────────────────────────────────────
+        for slot in NUMPAD_SLOTS.values():
+            s = slot  # capture
+            model.bind_event(f"op_set_np_{s}",
+                lambda h, e, a, s=s: self._on_set_numpad(s))
+            model.bind_func(f"np_{s}_label",
+                lambda s=s: ("✓" if (STATE.numpad_views or {}).get(s) else "—"))
+
+        # ── Lock toggles ──────────────────────────────────────────────
+        model.bind_event("toggle_views_lock",  self._on_toggle_views_lock)
+        model.bind_event("toggle_numpad_lock", self._on_toggle_numpad_lock)
+        model.bind_event("toggle_home_lock",   self._on_toggle_home_lock)
+        model.bind_event("op_create_views",    self._on_create_views)
+        model.bind_func("views_locked",        lambda: STATE.views_locked)
+        model.bind_func("views_unlocked",      lambda: not STATE.views_locked)
+        model.bind_func("numpad_locked",       lambda: STATE.numpad_locked)
+        model.bind_func("numpad_unlocked",     lambda: not STATE.numpad_locked)
+        model.bind_func("home_locked",         lambda: STATE.home_locked)
+        model.bind_func("home_unlocked",       lambda: not STATE.home_locked)
+        model.bind_func("home_saved",          lambda: STATE.home_eye is not None)
+        model.bind_func("views_lock_label",    lambda: "🔒 Views Locked"   if STATE.views_locked  else "🔓 Lock Views")
+        model.bind_func("numpad_lock_label",   lambda: "🔒 Numpad Locked"  if STATE.numpad_locked else "🔓 Lock Numpad")
+        model.bind_func("home_lock_label",     lambda: "🔒" if STATE.home_locked else "🔓")
+
         # ── Settings ───────────────────────────────────────────────────
         model.bind_event("do_save_settings", self._on_save_settings)
         model.bind_event("do_load_settings", self._on_load_settings)
@@ -175,6 +199,10 @@ class FPNavPanel(lf.ui.Panel):
             "key_pitch_up", "key_pitch_down",
             "settings_status", "settings_status_class",
             *[f"v{i+1}_label" for i in range(6)],
+            *[f"np_{s}_label" for s in NUMPAD_SLOTS.values()],
+            "views_locked", "views_unlocked", "numpad_locked", "numpad_unlocked",
+            "home_locked", "home_unlocked", "home_saved",
+            "views_lock_label", "numpad_lock_label", "home_lock_label",
         )
 
     # ── Internal ───────────────────────────────────────────────────────
@@ -230,6 +258,8 @@ class FPNavPanel(lf.ui.Panel):
         self._dirty("floor_y_str")
 
     def _on_op_set_home(self, h, e, a):
+        if STATE.home_locked:
+            return
         cam = lf.get_camera()
         if cam is None:
             return
@@ -237,6 +267,7 @@ class FPNavPanel(lf.ui.Panel):
         STATE.home_target = cam.target
         STATE.home_up     = cam.up
         lf.log.info("fp_navigation: home saved")
+        self._dirty("home_saved")
 
     def _on_op_reset_home(self, h, e, a):
         if STATE.home_eye is None:
@@ -246,6 +277,8 @@ class FPNavPanel(lf.ui.Panel):
     # ── Favourite view handlers ───────────────────────────────────────
 
     def _on_set_view(self, idx: int):
+        if STATE.views_locked:
+            return
         cam = lf.get_camera()
         if cam is None:
             return
@@ -259,6 +292,107 @@ class FPNavPanel(lf.ui.Panel):
             return
         eye, target, up = STATE.views[idx]
         lf.set_camera(eye, target, up)
+
+    # ── Numpad preset handlers ────────────────────────────────────────
+
+    def _on_set_numpad(self, slot: str):
+        if STATE.numpad_locked:
+            return
+        cam = lf.get_camera()
+        if cam is None:
+            return
+        if STATE.numpad_views is None:
+            STATE.numpad_views = {}
+        STATE.numpad_views[slot] = (cam.eye, cam.target, cam.up)
+        _cfg.save(BINDINGS, STATE)
+        lf.log.info(f"fp_navigation: numpad slot {slot} saved")
+        self._dirty(f"np_{slot}_label")
+
+    # ── Lock toggle handlers ──────────────────────────────────────────
+
+    def _on_toggle_views_lock(self, h, e, a):
+        STATE.views_locked = not STATE.views_locked
+        _cfg.save(BINDINGS, STATE)
+        self._dirty("views_locked", "views_unlocked", "views_lock_label",
+                    *[f"v{i+1}_label" for i in range(6)])
+
+    def _on_toggle_numpad_lock(self, h, e, a):
+        STATE.numpad_locked = not STATE.numpad_locked
+        _cfg.save(BINDINGS, STATE)
+        self._dirty("numpad_locked", "numpad_unlocked", "numpad_lock_label",
+                    *[f"np_{s}_label" for s in NUMPAD_SLOTS.values()])
+
+    def _on_toggle_home_lock(self, h, e, a):
+        STATE.home_locked = not STATE.home_locked
+        _cfg.save(BINDINGS, STATE)
+        self._dirty("home_locked", "home_unlocked", "home_lock_label")
+
+    def _on_create_views(self, h, e, a):
+        """Run fpnav_estimate_numpad to auto-fill all numpad views from splat bounds."""
+        # If numpad is locked, ask the user to confirm before proceeding
+        if STATE.numpad_locked:
+            try:
+                confirmed = lf.ui.show_confirm_dialog(
+                    title="Create Views",
+                    message=(
+                        "Numpad views are currently locked.\n"
+                        "Creating views will temporarily unlock them,\n"
+                        "overwrite all 10 slots, then re-lock.\n\n"
+                        "Continue?"
+                    ),
+                )
+            except Exception:
+                # Fallback: no dialog API available — proceed anyway and log
+                confirmed = True
+                lf.log.warn("fpnav_estimate: confirm dialog unavailable — proceeding.")
+
+            if not confirmed:
+                lf.log.info("fpnav_estimate: cancelled by user.")
+                return
+
+        # Temporarily unlock so the estimator can write
+        was_locked = STATE.numpad_locked
+        STATE.numpad_locked = False
+
+        try:
+            # Import the estimator — support both drop-in and installed paths
+            import importlib, sys
+            est = None
+            for mod_name, mod in sys.modules.items():
+                if "fpnav_estimate_numpad" in mod_name:
+                    est = mod
+                    break
+            if est is None:
+                try:
+                    est = importlib.import_module(
+                        "lfs_plugins.FP_Navigation.fpnav_estimate_numpad")
+                except ModuleNotFoundError:
+                    # Last resort: look beside this file
+                    import importlib.util
+                    p = Path(__file__).resolve().parent.parent / "fpnav_estimate_numpad.py"
+                    spec = importlib.util.spec_from_file_location(
+                        "fpnav_estimate_numpad", p)
+                    est = importlib.util.module_from_spec(spec)
+                    spec.loader.exec_module(est)
+
+            views = est.estimate_numpad_views()
+
+            if STATE.numpad_views is None:
+                STATE.numpad_views = {}
+            STATE.numpad_views.update(views)
+            _cfg.save(BINDINGS, STATE)
+            lf.log.info("fpnav_estimate: all 10 numpad views created from splat bounds.")
+            self._set_status("Numpad views created ✓")
+        except Exception as exc:
+            lf.log.warn(f"fpnav_estimate: failed — {exc}")
+            self._set_status(f"Create views failed: {exc}", ok=False)
+        finally:
+            # Always restore lock state
+            STATE.numpad_locked = was_locked
+            self._dirty(
+                "numpad_locked", "numpad_unlocked", "numpad_lock_label",
+                *[f"np_{s}_label" for s in NUMPAD_SLOTS.values()],
+            )
 
     # ── Settings handlers ──────────────────────────────────────────────
 

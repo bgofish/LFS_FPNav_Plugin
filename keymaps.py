@@ -58,6 +58,16 @@ def _handle_event(event) -> bool:
         return False
     if event.over_gui:
         return False
+
+    # Numpad preset views
+    from .operators.nav_ops import STATE, NUMPAD_SLOTS
+    slot = NUMPAD_SLOTS.get(event.key)
+    if slot is not None:
+        view = (STATE.numpad_views or {}).get(slot)
+        if view:
+            lf.set_camera(view[0], view[1], view[2])
+        return True  # consume the key even if no view set
+
     op_id = BINDINGS.get(event.key)
     if op_id:
         lf.ui.ops.invoke(op_id)

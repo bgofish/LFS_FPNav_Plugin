@@ -24,13 +24,41 @@ class _State:
     show_coords: bool         = False
     # Favourite views V1–V6: each slot is (eye, target, up) or None
     views: list = None
-
-    def __post_init__(self):
-        if self.views is None:
-            self.views = [None] * 6
+    # Numpad preset views — keyed by slot name
+    numpad_views: dict = None
+    views_locked: bool = False
+    numpad_locked: bool = False
+    home_locked: bool = False
 
 STATE = _State()
 STATE.views = [None] * 6
+
+# Numpad key code → slot name mapping (GLFW codes)
+NUMPAD_SLOTS = {
+    320: "KP_0_bottom",
+    322: "KP_2_front",
+    326: "KP_6_right",
+    324: "KP_4_left",
+    328: "KP_8_back",
+    325: "KP_5_top",
+    323: "KP_3_south_east",
+    321: "KP_1_south_west",
+    327: "KP_7_north_west",
+    329: "KP_9_north_east",
+}
+NUMPAD_LABELS = {
+    "KP_0_bottom":     "KP0 — Bottom",
+    "KP_2_front":      "KP2 — Front",
+    "KP_6_right":      "KP6 — Right",
+    "KP_4_left":       "KP4 — Left",
+    "KP_8_back":       "KP8 — Back",
+    "KP_5_top":        "KP5 — Top",
+    "KP_3_south_east": "KP3 — SE",
+    "KP_1_south_west": "KP1 — SW",
+    "KP_7_north_west": "KP7 — NW",
+    "KP_9_north_east": "KP9 — NE",
+}
+STATE.numpad_views = {k: None for k in NUMPAD_SLOTS.values()}
 
 
 # ---------------------------------------------------------------------------
