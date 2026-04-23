@@ -40,7 +40,7 @@ If you want to use it everytime: set to [Load on Startup] (Grid view required)
 
 1. Open a scene with a loaded Gaussian splat.
 2. Click inside the 3D viewport to give it focus - this is important to "link to the view"
-3. Open the **FP Walk** panel (main panel tabs).
+3. Open the **FP Nav** panel (main panel tabs).
 4. Optionally move the camera to your desired eye height and press
    **Set Floor to Eye Y** to lock the floor at that level.
 5. Use `←` / `→` to turn, `↑` / `↓` to move forwards/backwards, `Q` / `E` to look down/up.
