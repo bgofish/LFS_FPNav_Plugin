@@ -1,6 +1,6 @@
 [project]
 name = "FP_Navigation"
-version = "0.1.1"
+version = "0.1.2"
 description = "First-person ← → arrow key navigation for LichtFeld Studio viewports"
 authors = [{ name = "Brian Davis (bb6)" }]
 dependencies = []

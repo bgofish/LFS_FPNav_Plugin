@@ -1,0 +1,26 @@
+{
+  "bindings": {
+    "265": "lfs_plugins.FP_Navigation.operators.nav_ops.FPNavMoveForward",
+    "264": "lfs_plugins.FP_Navigation.operators.nav_ops.FPNavMoveBackward",
+    "262": "lfs_plugins.FP_Navigation.operators.nav_ops.FPNavYawLeft",
+    "263": "lfs_plugins.FP_Navigation.operators.nav_ops.FPNavYawRight",
+    "69": "lfs_plugins.FP_Navigation.operators.nav_ops.FPNavPitchUp",
+    "81": "lfs_plugins.FP_Navigation.operators.nav_ops.FPNavPitchDown"
+  },
+  "move_step": 5.0,
+  "yaw_step": 5.0,
+  "pitch_step": 5.0,
+  "floor_y": 5,
+  "show_coords": true,
+  "home_eye": null,
+  "home_target": null,
+  "home_up": null,
+  "views": [
+    null,
+    null,
+    null,
+    null,
+    null,
+    null
+  ]
+}

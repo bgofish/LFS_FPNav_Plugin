@@ -21,9 +21,16 @@ class _State:
     home_eye:    tuple | None = None
     home_target: tuple | None = None
     home_up:     tuple | None = None
+    show_coords: bool         = False
+    # Favourite views V1–V6: each slot is (eye, target, up) or None
+    views: list = None
 
+    def __post_init__(self):
+        if self.views is None:
+            self.views = [None] * 6
 
 STATE = _State()
+STATE.views = [None] * 6
 
 
 # ---------------------------------------------------------------------------
@@ -181,6 +188,18 @@ class FPNavPitchDown(Operator):
     @classmethod
     def poll(cls, ctx): return lf.get_camera() is not None
     def execute(self, ctx): return _do_pitch(-STATE.pitch_step)
+
+
+class FPNavToggleCoords(Operator):
+    id = "fp_navigation.toggle_coords"
+    label = "FP: Toggle Coord Display"
+    description = "Show/hide eye & target coordinates on screen"
+    @classmethod
+    def poll(cls, ctx): return True
+    def execute(self, ctx):
+        STATE.show_coords = not STATE.show_coords
+        lf.log.info(f"fp_navigation: coord display {'on' if STATE.show_coords else 'off'}")
+        return {"FINISHED"}
 
 
 class FPNavSetFloor(Operator):
