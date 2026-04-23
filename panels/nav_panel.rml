@@ -44,7 +44,18 @@
   </div>
 
   <div class="separator"></div>
-
+  <!-- ── Settings ──────────────────────────────────────────────────── -->
+  <span class="section-label" style="color: #4A90D9;">Settings</span>
+  <div class="btn-row">
+    <button class="btn" data-event-click="do_save_settings"
+            title="Save current step sizes and floor Y to settings.json.">[ Save ]</button>
+    <button class="btn" data-event-click="do_load_settings"
+            title="Reload settings.json from disk — updates step sizes and floor Y without restarting.">[ Load ]</button>
+    <button class="btn" data-event-click="do_open_settings"
+            title="Open settings.json in Notepad++ (falls back to Notepad if Notepad++ is not installed).">[ Edit File ]</button>
+  </div>
+  <span class="{{settings_status_class}}">{{settings_status}}</span>
+  <div class="separator"></div>
   <!-- ── Movement ──────────────────────────────────────────────────── -->
   <span class="section-label" style="color: #4A90D9;">Movement</span>
   <div class="setting-row">
@@ -77,9 +88,8 @@
     <input type="text" class="number-input" data-value="yaw_step_str" />
   </div>
   <div class="btn-row">
-    <button class="btn" data-event-click="op_yaw_right" title="Yaw right.">Turn to Left</button>
-    <span class="prop-label" title="Key bound to Turn Right">{{key_yaw_right}}</span>
-    <button class="btn" data-event-click="op_yaw_left"  title="Yaw left.">Turn to Right</button>
+    <button class="btn" data-event-click="op_yaw_right" title="Yaw right.">Turn to Left</button>    <span class="prop-label" title="Key bound to Turn Right">{{key_yaw_right}}</span>
+    <button class="btn" data-event-click="op_yaw_left" title="Yaw left.">Turn to Right</button>
     <span class="prop-label" title="Key bound to Turn Left">{{key_yaw_left}}</span>
   </div>
 
@@ -162,11 +172,11 @@
   <span class="section-label" style="color: #4A90D9;">Settings</span>
   <div class="btn-row">
     <button class="btn" data-event-click="do_save_settings"
-            title="Save current step sizes and floor Y to settings.json.">Save</button>
+            title="Save current step sizes and floor Y to settings.json.">[ Save ]</button>
     <button class="btn" data-event-click="do_load_settings"
-            title="Reload settings.json from disk — updates step sizes and floor Y without restarting.">Load</button>
+            title="Reload settings.json from disk — updates step sizes and floor Y without restarting.">[ Load ]</button>
     <button class="btn" data-event-click="do_open_settings"
-            title="Open settings.json in Notepad++ (falls back to Notepad if Notepad++ is not installed).">Edit File</button>
+            title="Open settings.json in Notepad++ (falls back to Notepad if Notepad++ is not installed).">[ Edit File ]</button>
   </div>
   <span class="{{settings_status_class}}">{{settings_status}}</span>
 
