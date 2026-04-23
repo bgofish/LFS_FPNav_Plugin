@@ -47,7 +47,7 @@ If you want to use it everytime: set to [Load on Startup] (Grid view required)
 6. Press **Set [Home]** to bookmark a position and **Goto [Home]** to return.
 7. There are 6 other custom view slots that will have a tick beside them when set
 8. Both [Home] & [V1 to V6] are saved in the FPN_settings.json file  so area able to be copied across projects
-9. the settings buttons ae repeated at the bottom for convenience. 
+9. The settings buttons are repeated at the bottom for convenience. 
 
 ---
 
