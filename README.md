@@ -46,7 +46,7 @@ If you want to use it everytime: set to [Load on Startup] (Grid view required)
 5. Use `←` / `→` to turn, `↑` / `↓` to move forwards/backwards, `Q` / `E` to look down/up.
 6. Press **Set [Home]** to bookmark a position and **Goto [Home]** to return.
 7. There are 6 other custom view slots that will have a tick beside them when set
-8. Both [Home] & [V1 to V6] are saved in the FPN_settings.json file  so area able to be copied across projects
+8. Both [Home] & [V1 to V6] are saved in the FPN_settings.json file  so are able to be copied across projects
 9. The settings buttons are repeated at the bottom for convenience. 
 
 ---
@@ -61,6 +61,8 @@ If you want to use it everytime: set to [Load on Startup] (Grid view required)
 All settings are adjusted live in the **FP Nav** panel and saved manually 
 to `FPN_settings.json` in the plugin folder:
 
+Important - there is a current BUG that the settings are being ignored on load so press: Settings [Load] to load your settings !
+
 | Setting | Default | Description |
 |---------|---------|-------------|
 | Movement step | `0.25 m` | World units moved per forward/backward key press |
@@ -69,7 +71,6 @@ to `FPN_settings.json` in the plugin folder:
 | Floor Y | `0.0` | Camera Y is clamped to this value during movement |
 | Key bindings | see above | Customisable if needed (Stored as [GLFW key codes](https://www.glfw.org/docs/latest/group__keys.html)) |
 
-Settings need to manually loaded after & the file lives at:
 
 ```
 <plugin_folder>/fp_navigation/FPN_settings.json
