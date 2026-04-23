@@ -47,12 +47,15 @@ If you want to use it everytime: set to [Load on Startup] (Grid view required)
 6. Press **Set [Home]** to bookmark a position and **Goto [Home]** to return.
 7. There are 6 other custom view slots that will have a tick beside them when set
 8. Both [Home] & [V1 to V6] are saved in the FPN_settings.json file  so are able to be copied across projects
-9. The settings buttons are repeated at the bottom for convenience. 
+9. The settings buttons are repeated at the bottom for convenience.
+10. view creation buttons can be locked to avoid accidental overwriting
+11. numpad views - can be 'automatically' or manually set (Auto currently only works for models with a 0,0,0 centroid).
+<img width="239" height="280" alt="image" src="https://github.com/user-attachments/assets/f7dfcedc-beab-4503-ab3d-1385bae70822" />
 
 ---
 
 ## Panel Reference
-<img width="551" height="959" alt="image" src="https://github.com/user-attachments/assets/a48bf19c-3433-4037-bd14-ae80f9027044" />
+<img width="419" height="1163" alt="image" src="https://github.com/user-attachments/assets/a40c6912-0123-4000-8a2b-1020e78e969d" />
 
 ---
 
