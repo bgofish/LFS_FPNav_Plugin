@@ -7,8 +7,8 @@
     "69": "lfs_plugins.FP_Navigation.operators.nav_ops.FPNavPitchUp",
     "81": "lfs_plugins.FP_Navigation.operators.nav_ops.FPNavPitchDown"
   },
-  "move_step": 10.0,
-  "yaw_step": 13.199999809265137,
-  "pitch_step": 13.000000953674316,
-  "floor_y": 6.187784194946289
+  "move_step": 5.0,
+  "yaw_step": 5,
+  "pitch_step": 5,
+  "floor_y": 5
 }
