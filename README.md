@@ -17,13 +17,16 @@ height-locked to a configurable floor level so you stay on the ground plane.
 | `Q` | Tilt head down (pitch) |
 | `E` | Tilt head up (pitch) |
 
-All bindings are active when the viewport has focus. Pitch is clamped to ±80°
-so the camera cannot flip over. Keys can be set in the  plugin Settings.json file.
+All bindings are active when the viewport has focus - [You will need to click your mouse cursor in the main view]. 
+
+Pitch is clamped to ±80° so the camera cannot flip over. 
+
+Keys can be set in the plugin FPN_Settings.json file.
 
 ---
 
 ## Installation
-Paste https://github.com/bgofish/LFS_FPNav_Plugin  into the Plugin.Installer from within LichtFeld Studio. You may need to close & restart lichFeld Studio
+Not on the Market place yet so if you want to try it : Paste https://github.com/bgofish/LFS_FPNav_Plugin  into the Plugin.Installer from within LichtFeld Studio. 
 
 <img width="967" height="239" alt="image" src="https://github.com/user-attachments/assets/7dc65b25-7993-4028-83a9-f8f87cc9251b" />
 
@@ -37,39 +40,46 @@ If you want to use it everytime: set to [Load on Startup] (Grid view required)
 
 1. Open a scene with a loaded Gaussian splat.
 2. Click inside the 3D viewport to give it focus - this is important to "link to the view"
-3. Open the **FP Walk** panel (main panel tabs).
+3. Open the **FP Nav** panel (main panel tabs).
 4. Optionally move the camera to your desired eye height and press
    **Set Floor to Eye Y** to lock the floor at that level.
-5. Use `←` / `→` to turn, `↑` / `↓` to walk, `Q` / `E` to look up/down.
-6. Press **Set Home** to bookmark a position and **Reset Home** to return.
+5. Use `←` / `→` to turn, `↑` / `↓` to move forwards/backwards, `Q` / `E` to look down/up.
+6. Press **Set [Home]** to bookmark a position and **Goto [Home]** to return.
+7. There are 6 other custom view slots that will have a tick beside them when set
+8. Both [Home] & [V1 to V6] are saved in the FPN_settings.json file  so are able to be copied across projects
+9. The settings buttons are repeated at the bottom for convenience.
+10. view creation buttons can be locked to avoid accidental overwriting
+11. numpad views - can be 'automatically' or manually set (Auto currently only works for models with a 0,0,0 centroid).
+<img width="239" height="280" alt="image" src="https://github.com/user-attachments/assets/f7dfcedc-beab-4503-ab3d-1385bae70822" />
 
 ---
 
 ## Panel Reference
-<img width="535" height="446" alt="image" src="https://github.com/user-attachments/assets/2812ca88-f84f-4bd4-8c05-17a23b5f05f8" />
+<img width="419" height="1163" alt="image" src="https://github.com/user-attachments/assets/a40c6912-0123-4000-8a2b-1020e78e969d" />
 
 ---
 
 ## Configuration & Persistence
 
-All settings are adjusted live in the **FP Walk** panel and saved automatically
-to `settings.json` in the plugin folder:
+All settings are adjusted live in the **FP Nav** panel and saved manually 
+to `FPN_settings.json` in the plugin folder:
+
+Important - there is a current BUG that the settings are being ignored on load so press: Settings [Load] to load your settings !
 
 | Setting | Default | Description |
 |---------|---------|-------------|
-| Stride step | `0.25 m` | World units moved per forward/backward key press |
+| Movement step | `0.25 m` | World units moved per forward/backward key press |
 | Turn step | `5.0°` | Degrees rotated per left/right key press |
 | Tilt step | `3.0°` | Degrees pitched per Q/E key press |
 | Floor Y | `0.0` | Camera Y is clamped to this value during movement |
-| Key bindings | see above | Fully rebindable, stored as GLFW key codes |
+| Key bindings | see above | Customisable if needed (Stored as [GLFW key codes](https://www.glfw.org/docs/latest/group__keys.html)) |
 
-Settings are loaded on startup and saved whenever you change a value or
-rebind a key. The file lives at:
 
 ```
-<plugin_folder>/fp_navigation/settings.json
+<plugin_folder>/fp_navigation/FPN_settings.json
 ```
-<img width="1091" height="388" alt="image" src="https://github.com/user-attachments/assets/2f00aff9-10d8-4e77-9c4c-84a8f95a9c91" />
+
+<img width="1104" height="687" alt="image" src="https://github.com/user-attachments/assets/05a203be-dee9-47f4-bead-6b0d8617ea1e" />
 
 
 
