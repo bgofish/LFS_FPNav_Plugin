@@ -128,7 +128,7 @@ def estimate_numpad_views(
     cx = (mn[0] + mx[0]) / 2.0
     cy = (mn[1] + mx[1]) / 2.0
     cz = (mn[2] + mx[2]) / 2.0
-    centre = (cx, -cy, -cz)
+    centre = (cx, cy, cz)
 
     dx = mx[0] - mn[0]   # width  (X)
     dy = mx[1] - mn[1]   # height (Y)
@@ -152,63 +152,56 @@ def estimate_numpad_views(
         return (eye, centre, up)
 
     # ── Top  (KP5) — look straight down ──────────────────────────────────
-    # Frames X and Z; camera is directly above centre, looks at centre.
+    # Eye must clear the top face (cy + hy) then pull back enough to frame X/Z.
     d_top = _pullback(max(hx, hz), fov)
-    top = _pose((cx, cy + d_top, cz), up=(0.0, 0.0, -1.0))
+    top = _pose((cx, mx[1] + d_top, cz), up=(0.0, 0.0, -1.0))
     # "Up" vector for a top-down view must not be (0,1,0) — use -Z (front)
 
     # ── Bottom  (KP0) — look straight up ─────────────────────────────────
     d_bot = d_top
-    bottom = _pose((cx, cy - d_bot, cz), up=(0.0, 0.0, 1.0))
+    bottom = _pose((cx, mn[1] - d_bot, cz), up=(0.0, 0.0, 1.0))
 
     # ── Front  (KP2) — along -Z axis (looking toward +Z into the scene) ──
     d_front = _pullback(max(hx, hy), fov)
-    front = _pose((cx, cy, cz - d_front))
+    front = _pose((cx, cy, mn[2] - d_front))
 
     # ── Back  (KP8) — along +Z axis ──────────────────────────────────────
     d_back = d_front
-    back = _pose((cx, cy, cz + d_back))
+    back = _pose((cx, cy, mx[2] + d_back))
 
     # ── Right  (KP6) — along -X axis (looking toward +X) ────────────────
     d_right = _pullback(max(hz, hy), fov)
-    right = _pose((cx + d_right, cy, cz))
+    right = _pose((mx[0] + d_right, cy, cz))
 
     # ── Left  (KP4) — along +X axis ──────────────────────────────────────
     d_left = d_right
-    left = _pose((cx - d_left, cy, cz))
+    left = _pose((mn[0] - d_left, cy, cz))
 
     # ── Diagonal corners — 45° horizontal yaw, 45° downward pitch ────────
     #
-    # The eye sits at a true 45° elevation above the horizontal plane through
-    # the scene centre, so it looks down-and-in rather than straight across.
+    # Each eye starts from the relevant AABB corner face (mx/mn values) and
+    # then adds a pullback so the whole object fits in the FOV.
     #
-    # Geometry:
-    #   • We want the 3D pull-back distance D to frame h_diag at the given FOV.
-    #   • At 45° pitch the eye is split equally: horiz_offset = vert_offset = D/√2
-    #     so the horizontal ground distance from centre = D / √2.
-    #   • That horizontal distance is then split equally again between the two
-    #     ground axes (45° yaw), so each axis offset = D / √2 / √2 = D / 2.
-    #
-    # Result: eye = centre + (±D/2,  +D/√2,  ±D/2)
-    #         The view direction points straight at centre from 45° above.
-    #
-    # We scale D up by √2 so the *projected* coverage at the 45° angle still
-    # frames the full h_diag extent (same logic as the top-view pull-back but
-    # accounting for the foreshortening of a tilted view).
-    # Extra scale so the tilted view fits the full diagonal footprint:
-    # effective half-extent seen from 45° pitch = h_diag / cos(45°) = h_diag*√2
-    d45_3d = _pullback(h_diag * math.sqrt(2.0), fov)
-    d45_horiz_axis = d45_3d / 2.0          # per ground axis (X or Z)
-    d45_vert       = d45_3d / math.sqrt(2.0)  # Y rise
+    # Geometry (unchanged from before, but offsets now applied from the AABB
+    # surface rather than from the centre):
+    #   • pullback D frames h_diag (largest half-extent) at the given FOV,
+    #     scaled by √2 to compensate for 45° foreshortening.
+    #   • The 3-D offset is split: horiz per-axis = D/2,  vertical = D/√2.
+    #   • For each corner the horizontal components are added to the
+    #     corresponding AABB face (mx[0]/mn[0] for X, mx[2]/mn[2] for Z)
+    #     and the vertical component is added to the top face (mx[1]).
+    d45_3d         = _pullback(h_diag * math.sqrt(2.0), fov)
+    d45_h          = d45_3d / 2.0            # per ground axis pullback
+    d45_v          = d45_3d / math.sqrt(2.0) # vertical pullback
 
-    # NE  (KP9) — behind-right  (+Z, +X side), elevated
-    ne = _pose((cx + d45_horiz_axis, cy + d45_vert, cz + d45_horiz_axis))
-    # NW  (KP7) — behind-left   (+Z, -X side), elevated
-    nw = _pose((cx - d45_horiz_axis, cy + d45_vert, cz + d45_horiz_axis))
-    # SE  (KP3) — front-right   (-Z, +X side), elevated
-    se = _pose((cx + d45_horiz_axis, cy + d45_vert, cz - d45_horiz_axis))
-    # SW  (KP1) — front-left    (-Z, -X side), elevated
-    sw = _pose((cx - d45_horiz_axis, cy + d45_vert, cz - d45_horiz_axis))
+    # NE  (KP9) — behind-right  (+Z face, +X face), elevated above top face
+    ne = _pose((mx[0] + d45_h, mx[1] + d45_v, mx[2] + d45_h))
+    # NW  (KP7) — behind-left   (+Z face, -X face), elevated
+    nw = _pose((mn[0] - d45_h, mx[1] + d45_v, mx[2] + d45_h))
+    # SE  (KP3) — front-right   (-Z face, +X face), elevated
+    se = _pose((mx[0] + d45_h, mx[1] + d45_v, mn[2] - d45_h))
+    # SW  (KP1) — front-left    (-Z face, -X face), elevated
+    sw = _pose((mn[0] - d45_h, mx[1] + d45_v, mn[2] - d45_h))
 
     return {
         "KP_5_top":        top,
