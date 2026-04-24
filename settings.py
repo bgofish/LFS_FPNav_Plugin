@@ -68,6 +68,12 @@ def save(bindings: dict, state) -> None:
             [_tup(v[0]), _tup(v[1]), _tup(v[2])] if v else None
             for v in (state.views or [None]*6)
         ],
+        "views_locked":  state.views_locked,
+        "numpad_locked": state.numpad_locked,
+        "numpad_views": {
+            k: [_tup(v[0]), _tup(v[1]), _tup(v[2])] if v else None
+            for k, v in (state.numpad_views or {}).items()
+        },
     }
     try:
         _SETTINGS_PATH.write_text(json.dumps(data, indent=2), encoding="utf-8")
@@ -106,3 +112,17 @@ def apply(data: dict, bindings: dict, state) -> None:
     # Pad to 6 if file had fewer
     while len(state.views) < 6:
         state.views.append(None)
+
+    state.views_locked  = data.get("views_locked",  False)
+    state.numpad_locked = data.get("numpad_locked", False)
+
+    # Numpad views
+    from .operators.nav_ops import NUMPAD_SLOTS
+    raw_nv = data.get("numpad_views", {})
+    state.numpad_views = {}
+    for slot in NUMPAD_SLOTS.values():
+        raw = raw_nv.get(slot)
+        if raw and raw[0] is not None:
+            state.numpad_views[slot] = (_load_tup(raw[0]), _load_tup(raw[1]), _load_tup(raw[2]))
+        else:
+            state.numpad_views[slot] = None

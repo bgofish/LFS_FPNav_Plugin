@@ -149,7 +149,7 @@ class FPNavPanel(lf.ui.Panel):
         model.bind_func("home_saved",          lambda: STATE.home_eye is not None)
         model.bind_func("views_lock_label",    lambda: "🔒 Views Locked"   if STATE.views_locked  else "🔓 Lock Views")
         model.bind_func("numpad_lock_label",   lambda: "🔒 Numpad Locked"  if STATE.numpad_locked else "🔓 Lock Numpad")
-        model.bind_func("home_lock_label",     lambda: "🔒" if STATE.home_locked else "🔓")
+        model.bind_func("home_lock_label",     lambda: "🔒 View Locked"    if STATE.home_locked   else "🔓 Lock Home")
 
         # ── Settings ───────────────────────────────────────────────────
         model.bind_event("do_save_settings", self._on_save_settings)

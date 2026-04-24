@@ -50,6 +50,7 @@
     </div>
   </div>
   <div class="separator"></div>
+
   <!-- ── Settings ──────────────────────────────────────────────────── -->
   <span class="section-label" style="color: #4A90D9;">Settings</span>
   <div class="btn-row">
@@ -61,7 +62,6 @@
             title="Open settings.json in Notepad++ (falls back to Notepad if Notepad++ is not installed).">Edit File</button>
   </div>
   <span class="{{settings_status_class}}">{{settings_status}}</span>
-
   <div class="separator"></div>
 
   <!-- ── Movement ──────────────────────────────────────────────────── -->
