@@ -52,6 +52,7 @@ class FPNavPanel(lf.ui.Panel):
         self._settings_status    = ""
         self._settings_status_ok = True
         self._first_update       = True
+        self._draw_handler_registered = False
 
     # ── Lifecycle ──────────────────────────────────────────────────────
 
@@ -164,21 +165,56 @@ class FPNavPanel(lf.ui.Panel):
         # Dirty all fields immediately so sliders read STATE (already loaded) not defaults
         self._dirty_all()
 
+        # Register a POST_VIEW draw handler so coordinate fields are dirtied
+        # every rendered frame — required in newer Lichtfeld where on_update
+        # alone doesn't fire during native pan/orbit.
+        self._register_draw_handler()
+
     def on_update(self, doc):
         if self._first_update:
             self._first_update = False
-            self._dirty_all()   # push correct STATE values to all sliders/labels
+            self._dirty_all()
             return True
-        if self._coords_expanded:
+        # Fallback for older Lichtfeld where add_draw_handler isn't available
+        if not self._draw_handler_registered and self._coords_expanded:
             self._dirty("eye_x", "eye_y", "eye_z",
                         "tgt_x", "tgt_y", "tgt_z",
                         "no_camera", "has_camera")
-            return True
-        return False
+        return True
 
     def on_unmount(self, doc):
+        self._unregister_draw_handler()
         doc.remove_data_model("fp_nav_panel")
         self._handle = None
+
+    # ── Draw handler (fires every rendered frame) ──────────────────────
+
+    def _register_draw_handler(self):
+        try:
+            lf.remove_draw_handler("fp_nav_coords")
+        except Exception:
+            pass
+        try:
+            lf.add_draw_handler("fp_nav_coords", self._on_draw, "POST_VIEW")
+            self._draw_handler_registered = True
+            lf.log.info("fp_navigation: using POST_VIEW draw handler for live coords")
+        except Exception:
+            self._draw_handler_registered = False
+            lf.log.info("fp_navigation: add_draw_handler unavailable, using on_update poll")
+
+    def _unregister_draw_handler(self):
+        try:
+            lf.remove_draw_handler("fp_nav_coords")
+        except Exception:
+            pass
+        self._draw_handler_registered = False
+
+    def _on_draw(self, ctx):
+        """Called every rendered frame — dirty coord fields so they stay live."""
+        if self._coords_expanded and self._handle:
+            self._dirty("eye_x", "eye_y", "eye_z",
+                        "tgt_x", "tgt_y", "tgt_z",
+                        "no_camera", "has_camera")
 
     # ── Dirty helpers ──────────────────────────────────────────────────
 
